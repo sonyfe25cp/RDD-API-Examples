@@ -1,2 +1,7 @@
 # RDD-API-Examples
-Here are lots of examples to show how to use RDD API in Chinese.
+
+#例子
+
+#来源
+
+本文翻译自[Zhen He的个人主页](http://homepage.cs.latrobe.edu.au/zhe/ZhenHeSparkRDDAPIExamples.html)

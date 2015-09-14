@@ -364,10 +364,83 @@ res41: Int = 5050
 
 ##reduceByKey[Pair], reduceByKeyLocally[Pair], reduceByKeyToDriver[Pair]
 
+这个函数提供Spark中众所周知的`reduce`功能。需要注意的是，任何一个函数`f`，应该是可交换的用于产生可再现的结果。
+
+**变量列表**
+
+	def reduceByKey(func: (V, V) => V): RDD[(K, V)]
+	def reduceByKey(func: (V, V) => V, numPartitions: Int): RDD[(K, V)]
+	def reduceByKey(partitioner: Partitioner, func: (V, V) => V): RDD[(K, V)]
+	def reduceByKeyLocally(func: (V, V) => V): Map[K, V]
+	def reduceByKeyToDriver(func: (V, V) => V): Map[K, V]
+
+**Example**
+
+```scala
+val a = sc.parallelize(List("dog", "cat", "owl", "gnu", "ant"), 2)
+val b = a.map(x => (x.length, x))
+b.reduceByKey(_ + _).collect
+res86: Array[(Int, String)] = Array((3,dogcatowlgnuant))
+
+val a = sc.parallelize(List("dog", "tiger", "lion", "cat", "panther", "eagle"), 2)
+val b = a.map(x => (x.length, x))
+b.reduceByKey(_ + _).collect
+res87: Array[(Int, String)] = Array((4,lion), (3,dogcat), (7,panther), (5,tigereagle))
+```
+
+##repartition
+
+这个函数可根据传入的参数`numPartitions`来改变分区数目。
+
+**变量列表**
+	
+	def repartition(numPartitions: Int)(implicit ord: Ordering[T] = null): RDD[T]
 
 
+**Example**
+```scala
+val rdd = sc.parallelize(List(1, 2, 10, 4, 5, 2, 1, 1, 1), 3)
+rdd.partitions.length
+res2: Int = 3
+val rdd2  = rdd.repartition(5)
+rdd2.partitions.length
+res6: Int = 5
+```
+
+##repartitionAndSortWithinPartitions
+
+根据给定的`partitioner`对RDD重新分区，在每个新分区中按照它们的key进行排序。
+
+**变量列表**
+
+	def repartitionAndSortWithinPartitions(partitioner: Partitioner): RDD[(K, V)]
+
+**Example**
+
+```scala
+// 首先我们做范围分区，不带排序
+val randRDD = sc.parallelize(List( (2,"cat"), (6, "mouse"),(7, "cup"), (3, "book"), (4, "tv"), (1, "screen"), (5, "heater")), 3)
+val rPartitioner = new org.apache.spark.RangePartitioner(3, randRDD)
+val partitioned = randRDD.partitionBy(rPartitioner)
+def myfunc(index: Int, iter: Iterator[(Int, String)]) : Iterator[String] = {
+  iter.toList.map(x => "[partID:" +  index + ", val: " + x + "]").iterator
+}
+partitioned.mapPartitionsWithIndex(myfunc).collect
+
+res0: Array[String] = Array([partID:0, val: (2,cat)], [partID:0, val: (3,book)], [partID:0, val: (1,screen)], [partID:1, val: (4,tv)], [partID:1, val: (5,heater)], [partID:2, val: (6,mouse)], [partID:2, val: (7,cup)])
 
 
+//重新分区，带排序 
+val partitioned = randRDD.repartitionAndSortWithinPartitions(rPartitioner)
+def myfunc(index: Int, iter: Iterator[(Int, String)]) : Iterator[String] = {
+  iter.toList.map(x => "[partID:" +  index + ", val: " + x + "]").iterator
+}
+partitioned.mapPartitionsWithIndex(myfunc).collect
+
+res1: Array[String] = Array([partID:0, val: (1,screen)], [partID:0, val: (2,cat)], [partID:0, val: (3,book)], [partID:1, val: (4,tv)], [partID:1, val: (5,heater)], [partID:2, val: (6,mouse)], [partID:2, val: (7,cup)])
+```
+
+##rightOuterJoin[Pair]
 
 
 
